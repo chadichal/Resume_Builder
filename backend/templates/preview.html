@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Resume - AI Resume Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">AI Resume Builder</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <h2>Resume Preview</h2>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-primary" id="download-pdf" data-resume-id="{{ resume.id }}">Download PDF</button>
+                <button class="btn btn-secondary" onclick="printResume()">Print</button>
+                <button class="btn btn-info share-btn" data-resume-id="{{ resume.id }}">Share</button>
+            </div>
+        </div>
+
+        <!-- Template Selection -->
+        <div class="template-selection mt-4">
+            <h3>Choose Template</h3>
+            <div class="template-grid">
+                <div class="template-card {% if resume.template_id == 1 %}selected{% endif %}" data-template-id="1" data-resume-id="{{ resume.id }}">
+                    <div class="template-preview mini">
+                        <h4>{{ resume.full_name }}</h4>
+                        <p>{{ resume.professional_title }}</p>
+                        <div class="contact-info">📧 {{ resume.email }}</div>
+                    </div>
+                    <div class="template-info">
+                        <h4>Professional</h4>
+                        <p>ATS-friendly, single column</p>
+                    </div>
+                </div>
+                
+                <div class="template-card {% if resume.template_id == 2 %}selected{% endif %}" data-template-id="2" data-resume-id="{{ resume.id }}">
+                    <div class="template-preview mini">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 30%; background: #f0f0f0;">Photo</div>
+                            <div style="width: 70%;">Content</div>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <h4>Modern</h4>
+                        <p>Two-column layout with photo</p>
+                    </div>
+                </div>
+                
+                <div class="template-card {% if resume.template_id == 3 %}selected{% endif %}" data-template-id="3" data-resume-id="{{ resume.id }}">
+                    <div class="template-preview mini" style="background: linear-gradient(135deg, #3498db, #2ecc71); color: white;">
+                        <h4>Creative</h4>
+                    </div>
+                    <div class="template-info">
+                        <h4>Creative</h4>
+                        <p>Colorful design</p>
+                    </div>
+                </div>
+                
+                <div class="template-card {% if resume.template_id == 4 %}selected{% endif %}" data-template-id="4" data-resume-id="{{ resume.id }}">
+                    <div class="template-preview mini" style="border: 1px solid #ddd; padding: 5px;">
+                        <h4 style="font-weight: 300;">Minimalist</h4>
+                    </div>
+                    <div class="template-info">
+                        <h4>Minimalist</h4>
+                        <p>Clean and simple</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ATS Score Dashboard -->
+        <div class="ats-dashboard mt-4" id="ats-dashboard" 
+             data-score="{{ resume.ats_score|default(0)|float }}"
+             data-feedback="{{ resume.ats_feedback|default('')|e }}">
+            <h3>ATS Score Analysis</h3>
+            <div class="score-circle">
+                <span class="score-value" id="ats-score-value">{{ resume.ats_score|default(0)|round|int }}</span>
+            </div>
+            
+            <div class="score-breakdown" id="score-breakdown"></div>
+            
+            <div class="score-feedback" id="ats-feedback">
+                {{ resume.ats_feedback|default('No ATS feedback available') }}
+            </div>
+        </div>
+
+        <!-- Job Match Analysis -->
+        <div class="job-match mt-4">
+            <h3>Job Match Analysis</h3>
+            <div class="form-group">
+                <label>Job Description</label>
+                <textarea class="form-control" id="job-description" rows="5" placeholder="Paste job description here..."></textarea>
+            </div>
+            <button class="btn btn-primary" id="analyze-job-match" data-resume-id="{{ resume.id }}">Analyze Match</button>
+            <div id="match-loading" class="spinner" style="display: none;"></div>
+            <div id="job-match-results" class="mt-3"></div>
+        </div>
+
+        <!-- Resume Preview -->
+        <div class="resume-preview mt-4" id="resume-preview">
+            <iframe src="/render-resume/{{ resume.id }}" width="100%" height="800px" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="static/app.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Safely load ATS score from data attributes
+            var atsScore = parseFloat($('#ats-dashboard').data('score') || 0);
+            var atsFeedback = $('#ats-dashboard').data('feedback') || '';
+            
+            // Call the update function if it exists
+            if (typeof updateATSScore === 'function') {
+                updateATSScore(atsScore, atsFeedback);
+            }
+        });
+
+        // Print function
+        function printResume() {
+            window.print();
+        }
+
+        // Share function using data attribute
+        $(document).on('click', '.share-btn', function() {
+            var resumeId = $(this).data('resume-id');
+            if (!resumeId) return;
+            
+            var url = window.location.origin + '/preview/' + resumeId;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Resume',
+                    text: 'Check out my resume!',
+                    url: url
+                }).catch(function(error) {
+                    console.log('Sharing failed:', error);
+                    alert('Could not share. Link copied to clipboard instead.');
+                    copyToClipboard(url);
+                });
+            } else {
+                copyToClipboard(url);
+                alert('Link copied to clipboard!');
+            }
+        });
+
+        // Copy to clipboard helper
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(function(error) {
+                console.log('Copy failed:', error);
+            });
+        }
+
+        // Download PDF
+        $('#download-pdf').click(function() {
+            var resumeId = $(this).data('resume-id');
+            if (resumeId) {
+                window.location.href = '/download-pdf/' + resumeId;
+            }
+        });
+
+        // Analyze job match
+        $('#analyze-job-match').click(function() {
+            var resumeId = $(this).data('resume-id');
+            var jobDescription = $('#job-description').val();
+            
+            if (!jobDescription) {
+                alert('Please enter a job description');
+                return;
+            }
+            
+            $('#match-loading').show();
+            
+            $.ajax({
+                url: '/analyze-job-match',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    resume_id: resumeId,
+                    job_description: jobDescription
+                }),
+                success: function(data) {
+                    $('#match-loading').hide();
+                    displayJobMatch(data);
+                },
+                error: function(xhr) {
+                    $('#match-loading').hide();
+                    alert('Error analyzing job match');
+                }
+            });
+        });
+
+        // Display job match results
+        function displayJobMatch(data) {
+            var html = '<div class="job-match-results">' +
+                '<h4>Match Analysis</h4>' +
+                '<p><strong>Similarity Score:</strong> ' + Math.round(data.similarity_score * 100) + '%</p>' +
+                '<p><strong>ATS Score:</strong> ' + Math.round(data.ats_score) + '%</p>';
+            
+            if (data.resume_keywords) {
+                html += '<div class="keywords-section">' +
+                    '<h5>Resume Keywords</h5>' +
+                    '<div class="keyword-tags">';
+                data.resume_keywords.forEach(function(k) {
+                    html += '<span class="badge badge-primary">' + k + '</span> ';
+                });
+                html += '</div>';
+            }
+            
+            if (data.job_keywords) {
+                html += '<h5>Job Keywords</h5>' +
+                    '<div class="keyword-tags">';
+                data.job_keywords.forEach(function(k) {
+                    html += '<span class="badge badge-secondary">' + k + '</span> ';
+                });
+                html += '</div>';
+            }
+            
+            if (data.ats_feedback) {
+                html += '<p><strong>Feedback:</strong> ' + data.ats_feedback + '</p>';
+            }
+            
+            html += '</div>';
+            
+            $('#job-match-results').html(html);
+        }
+    </script>
+</body>
+</html>

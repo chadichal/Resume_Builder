@@ -1,0 +1,24 @@
+resume-builder/
+│
+├── backend/
+│   ├── app.py
+│   ├── pdf.py
+│   ├── modules.py
+│   ├── models.py
+│   ├── upload_photo.py
+│   ├── professional_design_templates.py
+│   ├── run.py
+│   └── algorithm.py
+│
+├── static/
+│   ├── app.js
+│   └── styles.css
+│
+├── templates/
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── preview.html
+│   └── resume.html
+│
+└── requirements.txt
