@@ -1,230 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Resume - AI Resume Builder</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="static/styles.css">
+<meta charset="UTF-8">
+<title>ATS Result</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #f4f6f9;
+}
+
+/* HEADER */
+.header {
+    background: linear-gradient(90deg, #4e54c8, #8f94fb);
+    color: white;
+    text-align: center;
+    padding: 30px 10px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* CARD */
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+/* SCORE */
+.score {
+    font-size: 55px;
+    font-weight: bold;
+}
+
+.score.good { color: #4CAF50; }
+.score.medium { color: #ff9800; }
+.score.low { color: #f44336; }
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media(max-width:768px){
+    .grid { grid-template-columns: 1fr; }
+}
+
+/* TAGS */
+.keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tag {
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.matched {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.missing {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* PROGRESS BAR */
+.progress {
+    height: 12px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8bc34a);
+}
+
+/* BUTTON */
+.btn {
+    display: inline-block;
+    padding: 12px 22px;
+    background: #4e54c8;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* CHART */
+.chart-box {
+    width: 260px;
+    margin: auto;
+}
+</style>
+
 </head>
+
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">AI Resume Builder</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container">
-        <div class="resume-form">
-            <h2 class="form-title">Create Your Resume</h2>
-            
-            <div id="alert-container"></div>
-            
-            <form method="POST" action="/create-resume" enctype="multipart/form-data" id="resume-form">
-                <!-- Profile Photo -->
-                <div class="photo-upload">
-                    <h3 class="section-title">Profile Photo</h3>
-                    <div class="photo-preview" id="photo-preview" style="display: none;">
-                        <img id="photo-preview-img" src="" alt="Profile Preview">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Upload Passport Size Photo</label>
-                        <input type="file" class="form-control" name="profile_image" id="profile_image" accept="image/*">
-                        <small class="text-muted">Max size: 5MB. Supported: JPG, PNG, GIF</small>
-                    </div>
-                </div>
+<div class="header">
+    <h1>📊 ATS Analysis Result</h1>
+    <p>How well your resume matches the job role</p>
+</div>
 
-                <!-- Personal Information -->
-                <h3 class="section-title">Personal Information</h3>
-                
-                <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" class="form-control" name="full_name" required>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Email Address *</label>
-                            <input type="email" class="form-control" name="email" value="{{ current_user.email }}" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Phone Number *</label>
-                            <input type="tel" class="form-control" name="phone" value="{{ current_user.phone }}" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">LinkedIn Profile</label>
-                            <input type="url" class="form-control" name="linkedin" placeholder="https://linkedin.com/in/username">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Portfolio Website</label>
-                            <input type="url" class="form-control" name="portfolio" placeholder="https://yourportfolio.com">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Professional Title *</label>
-                    <input type="text" class="form-control" name="professional_title" placeholder="e.g., Software Engineer" required>
-                </div>
+<div class="container">
 
-                <!-- Job Target -->
-                <h3 class="section-title">Job Target</h3>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Target Job Role *</label>
-                            <input type="text" class="form-control" name="job_role" placeholder="e.g., Data Scientist" required onchange="suggestSkills()">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Experience Level *</label>
-                            <select class="form-control" name="experience_level" id="experience_level" required>
-                                <option value="fresher">Fresher</option>
-                                <option value="experienced">Experienced</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label class="form-label">Resume Tone *</label>
-                            <select class="form-control" name="resume_tone" required>
-                                <option value="professional">Professional</option>
-                                <option value="technical">Technical</option>
-                                <option value="modern">Modern</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+<!-- SCORE CARD -->
+<div class="card text-center">
 
-                <!-- Skill Suggestions -->
-                <div id="skill-suggestions"></div>
+    {% if score >= 75 %}
+        <div class="score good">{{ score }}%</div>
+        <p>Excellent Match 🚀</p>
+    {% elif score >= 50 %}
+        <div class="score medium">{{ score }}%</div>
+        <p>Good, but can improve ⚡</p>
+    {% else %}
+        <div class="score low">{{ score }}%</div>
+        <p>Needs improvement ❗</p>
+    {% endif %}
 
-                <!-- Education -->
-                <h3 class="section-title">Education</h3>
-                <div id="education-container">
-                    <div class="education-entry">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <input type="text" class="form-control" name="degree[]" placeholder="Degree">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" class="form-control" name="institution[]" placeholder="Institution">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="text" class="form-control" name="graduation_year[]" placeholder="Year">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="text" class="form-control" name="cgpa[]" placeholder="CGPA/%">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-danger remove-entry">Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm" id="add-education">Add Education</button>
-
-                <!-- Experience (for experienced) -->
-                <div id="experience-section" style="display: none;">
-                    <h3 class="section-title">Work Experience</h3>
-                    <div id="experience-container"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="add-experience">Add Experience</button>
-                </div>
-
-                <!-- Projects -->
-                <h3 class="section-title">Projects</h3>
-                <div id="projects-container">
-                    <div class="project-entry">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <input type="text" class="form-control" name="project_title[]" placeholder="Project Title">
-                            </div>
-                            <div class="col-md-5">
-                                <textarea class="form-control" name="project_description[]" placeholder="Description" rows="2"></textarea>
-                            </div>
-                            <div class="col-md-2">
-                                <input type="text" class="form-control" name="project_technologies[]" placeholder="Technologies">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-danger remove-entry">Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm" id="add-project">Add Project</button>
-
-                <!-- Skills -->
-                <h3 class="section-title">Skills</h3>
-                
-                <div class="form-group">
-                    <label class="form-label">Technical Skills</label>
-                    <input type="text" class="form-control" name="technical_skills[]" id="technical_skills" placeholder="e.g., Python, JavaScript, SQL">
-                    <small class="text-muted">Separate with commas</small>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Soft Skills</label>
-                    <input type="text" class="form-control" name="soft_skills[]" placeholder="e.g., Communication, Leadership">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Tools & Technologies</label>
-                    <input type="text" class="form-control" name="tools[]" placeholder="e.g., Git, Docker, AWS">
-                </div>
-
-                <!-- Additional Sections -->
-                <h3 class="section-title">Additional Information</h3>
-                
-                <div class="form-group">
-                    <label class="form-label">Certifications</label>
-                    <textarea class="form-control" name="certifications" rows="3" placeholder="List your certifications"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Languages</label>
-                    <input type="text" class="form-control" name="languages" placeholder="e.g., English, Spanish, French">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Achievements</label>
-                    <textarea class="form-control" name="achievements" rows="3" placeholder="List your achievements"></textarea>
-                </div>
-
-                <!-- Submit -->
-                <div class="form-group text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">Generate Resume</button>
-                </div>
-            </form>
-        </div>
+    <!-- Progress -->
+    <div class="progress">
+        <div class="progress-bar" style="width: {{ score }}%"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="static/app.js"></script>
+    <!-- Chart -->
+    <div class="chart-box">
+        <canvas id="chart"></canvas>
+    </div>
+
+</div>
+
+<!-- INSIGHTS -->
+<div class="card">
+    <h3>📌 Insights</h3>
+    <p>
+        ✔ Matched Keywords: <b>{{ matched|length }}</b><br>
+        ❌ Missing Keywords: <b>{{ missing|length }}</b>
+    </p>
+
+    <p>
+        {% if score < 50 %}
+            Add more relevant skills and keywords from the job description.
+        {% elif score < 75 %}
+            You're close! Improve by adding missing keywords.
+        {% else %}
+            Great job! Your resume is highly optimized.
+        {% endif %}
+    </p>
+</div>
+
+<!-- KEYWORDS -->
+<div class="grid">
+
+<!-- MATCHED -->
+<div class="card">
+    <h3>✅ Matched Keywords</h3>
+    <div class="keywords">
+        {% for word in matched %}
+        <span class="tag matched">{{ word }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- MISSING -->
+<div class="card">
+    <h3>❌ Missing Keywords</h3>
+    <div class="keywords">
+        {% for word in missing %}
+        <span class="tag missing">{{ word }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+</div>
+
+<center>
+    <a href="/dashboard" class="btn">⬅ Back to Dashboard</a>
+</center>
+
+</div>
+
+<script>
+const score = {{ score }};
+
+// Chart
+new Chart(document.getElementById("chart"), {
+    type: 'doughnut',
+    data: {
+        datasets: [{
+            data: [score, 100 - score]
+        }]
+    },
+    options: {
+        cutout: '75%',
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+</script>
+
 </body>
 </html>
